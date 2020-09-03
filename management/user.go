@@ -2,6 +2,7 @@ package management
 
 import (
 	"encoding/json"
+	"net"
 	"reflect"
 	"strconv"
 	"time"
@@ -85,6 +86,33 @@ type User struct {
 
 	// True if the user is blocked from the application, false if the user is enabled
 	Blocked *bool `json:"blocked,omitempty"`
+
+	// The IP Address that the user last authenticated from
+	LastIP *net.IP `json:"last_ip,omitempty"`
+
+	// The number of times this user has authenticated
+	LoginsCount *int32 `json:"logins_count,omitempty"`
+
+	// Description may be provided by some connectors
+	Description *string `json:"description,omitempty"`
+
+	// Status may be provided by some connectors
+	Status *string `json:"status,omitempty"`
+
+	// Some connectors may provide multiple email addresses
+	Emails []string `json:"emails,omitempty"`
+
+	// These Roles may be provided by some connectors
+	ConnectorRoles RolesList `json:"roles,omitempty"`
+
+	// DN may be provided by the LDAP connector
+	DistinguishedName *string `json:"dn,omitempty"`
+
+	// May be provided by the LDAP connector (or others)
+	Title *string `json:"title,omitempty"`
+
+	// May be provided by the LDAP connector (or others)
+	Manager *string `json:"manager,omitempty"`
 }
 
 type UserIdentity struct {
@@ -146,6 +174,29 @@ func (i *UserIdentity) MarshalJSON() ([]byte, error) {
 
 	return json.Marshal(alias)
 }
+
+// LDAP returns a string for a single role, or []string for more than one.
+// This type normalizes them into something slice-like
+//
+type RolesList []string
+
+func (l *RolesList) UnmarshalJSON(data []byte) error {
+	if l == nil {
+		return nil
+	}
+	var ret []string
+	if err := json.Unmarshal(data, &ret); err != nil {
+		var single string
+		if err := json.Unmarshal(data, &single); err != nil {
+			return err
+		}
+		ret = []string{single}
+	}
+	*l = ret
+	return nil
+}
+
+var _ json.Unmarshaler = (*RolesList)(nil)
 
 type userBlock struct {
 	BlockedFor []*UserBlock `json:"blocked_for,omitempty"`
