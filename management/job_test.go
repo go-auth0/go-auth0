@@ -19,8 +19,10 @@ func TestJob(t *testing.T) {
 	u := &User{
 		Connection: auth0.String("Username-Password-Authentication"),
 		Email:      auth0.String("example@example.com"),
-		Username:   auth0.String("example"),
 		Password:   auth0.String("I have a password and its a secret"),
+	}
+	if auth0.BoolValue(c.Options.(*ConnectionOptions).RequiresUsername) {
+		u.Username = auth0.String("example")
 	}
 	err = m.User.Create(u)
 	if err != nil {
